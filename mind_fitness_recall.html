@@ -1,0 +1,914 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Майнд Фитнес — Быстрое вспоминание</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #f5f2ee;
+  --surface: #ffffff;
+  --surface2: #ede9e3;
+  --border: rgba(0,0,0,0.1);
+  --text: #1a1714;
+  --text2: #6b6560;
+  --text3: #a09a94;
+  --purple: #4a3f8f;
+  --purple-l: #eeecfb;
+  --purple-m: #b5aee8;
+  --teal: #1a7a5e;
+  --teal-l: #e0f2eb;
+  --amber: #8a5a0a;
+  --amber-l: #fdf0d8;
+  --red-l: #fce8e8;
+  --red: #a02020;
+  --green-l: #e6f3e6;
+  --green: #1e6e1e;
+  --radius: 10px;
+  --radius-lg: 16px;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: 'DM Sans', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  line-height: 1.6;
+}
+
+.page {
+  max-width: 780px;
+  margin: 0 auto;
+  padding: 40px 24px 80px;
+}
+
+.masthead {
+  margin-bottom: 36px;
+  padding-bottom: 28px;
+  border-bottom: 1px solid var(--border);
+}
+
+.masthead-label {
+  font-size: 11px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--text3);
+  margin-bottom: 8px;
+}
+
+.masthead-title {
+  font-family: 'DM Serif Display', serif;
+  font-size: 38px;
+  line-height: 1.1;
+  color: var(--text);
+  margin-bottom: 10px;
+}
+
+.masthead-sub {
+  font-size: 15px;
+  color: var(--text2);
+  font-weight: 300;
+}
+
+.meta-strip {
+  display: flex;
+  gap: 0;
+  margin-bottom: 32px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+  background: var(--surface);
+}
+
+.meta-item {
+  flex: 1;
+  padding: 14px 16px;
+  border-right: 1px solid var(--border);
+}
+
+.meta-item:last-child { border-right: none; }
+
+.meta-item-label {
+  font-size: 10px;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: var(--text3);
+  margin-bottom: 4px;
+}
+
+.meta-item-val {
+  font-size: 17px;
+  font-weight: 500;
+  color: var(--text);
+}
+
+.nav-tabs {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 28px;
+  flex-wrap: wrap;
+}
+
+.nav-tab {
+  padding: 7px 18px;
+  font-size: 13px;
+  font-family: 'DM Sans', sans-serif;
+  border: 1px solid var(--border);
+  border-radius: 50px;
+  background: var(--surface);
+  color: var(--text2);
+  cursor: pointer;
+  transition: all .18s;
+  font-weight: 400;
+}
+
+.nav-tab:hover { background: var(--surface2); }
+
+.nav-tab.on {
+  background: var(--purple);
+  color: #fff;
+  border-color: var(--purple);
+  font-weight: 500;
+}
+
+.phase { display: none; }
+.phase.on { display: block; }
+
+.ex {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 24px;
+  margin-bottom: 20px;
+}
+
+.ex-head {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  margin-bottom: 14px;
+}
+
+.ex-num {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  font-weight: 500;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+.ex-info { flex: 1; }
+
+.ex-title {
+  font-family: 'DM Serif Display', serif;
+  font-size: 19px;
+  color: var(--text);
+  margin-bottom: 3px;
+}
+
+.ex-meta {
+  font-size: 12px;
+  color: var(--text3);
+}
+
+.tag {
+  font-size: 11px;
+  padding: 3px 10px;
+  border-radius: 50px;
+  white-space: nowrap;
+  font-weight: 500;
+}
+
+.ex-desc {
+  font-size: 14px;
+  color: var(--text2);
+  line-height: 1.7;
+  margin-bottom: 16px;
+  font-weight: 300;
+}
+
+.arena {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 18px;
+  margin: 12px 0;
+  min-height: 72px;
+}
+
+.arena-placeholder {
+  font-size: 14px;
+  color: var(--text3);
+  font-style: italic;
+}
+
+.btn-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+  margin-top: 14px;
+}
+
+button.btn {
+  padding: 8px 18px;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 13px;
+  font-weight: 500;
+  border: 1px solid var(--border);
+  border-radius: 50px;
+  background: var(--surface);
+  color: var(--text);
+  cursor: pointer;
+  transition: all .15s;
+}
+
+button.btn:hover { background: var(--surface2); }
+
+button.btn.primary {
+  background: var(--purple);
+  color: #fff;
+  border-color: var(--purple);
+}
+
+button.btn.primary:hover { opacity: .88; }
+
+.tdisp {
+  font-size: 18px;
+  font-weight: 500;
+  color: var(--text);
+  min-width: 52px;
+  font-variant-numeric: tabular-nums;
+  font-family: 'DM Serif Display', serif;
+}
+
+.pbar {
+  height: 3px;
+  background: var(--surface2);
+  border-radius: 2px;
+  margin-top: 10px;
+  overflow: hidden;
+}
+
+.pfill {
+  height: 100%;
+  border-radius: 2px;
+  transition: width 1s linear;
+}
+
+.sc-row {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 10px;
+}
+
+.sc {
+  background: var(--bg);
+  border-radius: var(--radius);
+  padding: 7px 12px;
+  font-size: 13px;
+  color: var(--text2);
+}
+
+.sc b { font-weight: 500; color: var(--text); }
+
+.tip {
+  background: var(--teal-l);
+  border-left: 3px solid var(--teal);
+  border-radius: 0 var(--radius) var(--radius) 0;
+  padding: 10px 14px;
+  font-size: 13px;
+  color: var(--teal);
+  line-height: 1.6;
+  margin-top: 14px;
+  font-weight: 300;
+}
+
+.warn {
+  background: var(--amber-l);
+  border-left: 3px solid var(--amber);
+  border-radius: 0 var(--radius) var(--radius) 0;
+  padding: 10px 14px;
+  font-size: 13px;
+  color: var(--amber);
+  line-height: 1.6;
+  margin-top: 10px;
+  font-weight: 300;
+}
+
+.wchip {
+  display: inline-block;
+  padding: 6px 14px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+  margin: 3px;
+}
+
+.wchip .num {
+  font-size: 11px;
+  color: var(--text3);
+  margin-right: 4px;
+}
+
+input.ans-inp {
+  flex: 1;
+  padding: 8px 12px;
+  font-size: 14px;
+  font-family: 'DM Sans', sans-serif;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+  color: var(--text);
+  outline: none;
+  transition: border-color .15s;
+}
+
+input.ans-inp:focus { border-color: var(--purple-m); }
+
+textarea.ans-inp {
+  width: 100%;
+  padding: 10px 13px;
+  font-size: 14px;
+  font-family: 'DM Sans', sans-serif;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+  color: var(--text);
+  resize: vertical;
+  outline: none;
+  margin: 8px 0;
+  line-height: 1.6;
+  font-weight: 300;
+  transition: border-color .15s;
+}
+
+textarea.ans-inp:focus { border-color: var(--purple-m); }
+
+.mat-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 6px;
+  max-width: 300px;
+}
+
+.mcell {
+  height: 50px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+  cursor: pointer;
+  transition: background .12s, border-color .12s;
+}
+
+.mcell:hover { background: var(--surface2); }
+.mcell.lit { background: var(--purple); border-color: #3a2f7f; }
+.mcell.sel { background: var(--purple-l); border-color: var(--purple-m); }
+.mcell.ok { background: var(--green-l); border-color: var(--green); cursor: default; }
+.mcell.miss { background: var(--amber-l); border-color: var(--amber); cursor: default; }
+.mcell.bad { background: var(--red-l); border-color: var(--red); cursor: default; }
+
+.conf-btns {
+  display: flex;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.conf-btn {
+  width: 40px;
+  height: 40px;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+  font-size: 14px;
+  font-family: 'DM Sans', sans-serif;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all .12s;
+}
+
+.conf-btn:hover { background: var(--purple-l); border-color: var(--purple-m); color: var(--purple); }
+
+.phase-hint {
+  font-size: 12px;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: var(--text3);
+  margin-bottom: 16px;
+  font-weight: 500;
+}
+
+.success-msg {
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--green);
+}
+
+.gate-card {
+  margin-bottom: 12px;
+}
+
+.gate-level {
+  font-size: 10px;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: var(--text3);
+  margin-bottom: 4px;
+}
+
+.gate-title {
+  font-family: 'DM Serif Display', serif;
+  font-size: 20px;
+  color: var(--text);
+  margin-bottom: 6px;
+}
+
+.gate-prompt {
+  font-size: 14px;
+  color: var(--text2);
+  font-weight: 300;
+}
+</style>
+</head>
+<body>
+
+<div class="page">
+
+  <div class="masthead">
+    <div class="masthead-label">Майнд Фитнес · Выше среднего</div>
+    <h1 class="masthead-title">Быстрое вспоминание<br>забытого</h1>
+    <div class="masthead-sub">Тренировка ретривала, рабочей памяти и метакогниции</div>
+  </div>
+
+  <div class="meta-strip">
+    <div class="meta-item">
+      <div class="meta-item-label">Длительность</div>
+      <div class="meta-item-val">50 мин</div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-item-label">Упражнений</div>
+      <div class="meta-item-val">5</div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-item-label">Сложность</div>
+      <div class="meta-item-val">★★★★☆</div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-item-label">Методы</div>
+      <div class="meta-item-val">Ретривал</div>
+    </div>
+  </div>
+
+  <div class="nav-tabs">
+    <button class="nav-tab on" onclick="gp(0)">Разминка</button>
+    <button class="nav-tab" onclick="gp(1)">Цепочка слов</button>
+    <button class="nav-tab" onclick="gp(2)">Интерференция</button>
+    <button class="nav-tab" onclick="gp(3)">Матрица 5×5</button>
+    <button class="nav-tab" onclick="gp(4)">Заминка</button>
+  </div>
+
+  <!-- РАЗМИНКА -->
+  <div class="phase on" id="ph-0">
+    <div class="phase-hint">Блок 1 · Разминка · 7 минут</div>
+    <div class="ex">
+      <div class="ex-head">
+        <div class="ex-num" style="background:var(--teal-l);color:var(--teal);">R</div>
+        <div class="ex-info">
+          <div class="ex-title">Контекстные ворота памяти</div>
+          <div class="ex-meta">5 временных слоёв · говорите вслух</div>
+        </div>
+        <span class="tag" style="background:var(--teal-l);color:var(--teal);">разминка</span>
+      </div>
+      <div class="ex-desc">Активируйте следы памяти на пяти временных слоях — от сегодняшнего утра до года назад. Для каждого слоя вспомните одну точную сенсорную деталь и проговорите её вслух.</div>
+      <div class="arena" id="gate-arena"><div class="arena-placeholder">Нажмите «Открыть ворота» — появится первый временной слой</div></div>
+      <div class="btn-row">
+        <button class="btn primary" onclick="openGates()">Открыть ворота</button>
+        <button class="btn" onclick="nextGate()">Следующий →</button>
+        <div class="tdisp" id="gtime">7:00</div>
+      </div>
+      <div class="pbar"><div class="pfill" id="gtimep" style="width:100%;background:var(--teal);"></div></div>
+      <div class="tip">Чем точнее деталь — тем сильнее активируется след. Не «был в кафе», а «кофе был горьким и стол скрипел».</div>
+    </div>
+  </div>
+
+  <!-- ЦЕПОЧКА СЛОВ -->
+  <div class="phase" id="ph-1">
+    <div class="phase-hint">Блок 2 · Упражнение 1 · 12 минут</div>
+    <div class="ex">
+      <div class="ex-head">
+        <div class="ex-num" style="background:var(--purple-l);color:var(--purple);">1</div>
+        <div class="ex-info">
+          <div class="ex-title">Цепочка 10 слов — строгий порядок</div>
+          <div class="ex-meta">45 сек на запоминание · без подсказок</div>
+        </div>
+        <span class="tag" style="background:var(--purple-l);color:var(--purple);">рабочая + эпизодическая</span>
+      </div>
+      <div class="ex-desc">Запомните 10 несвязанных слов за 45 секунд, используя метод «дворца памяти» или ассоциативную цепочку. Затем — воспроизведение строго по порядку без подсказок.</div>
+      <div style="font-size:13px;color:var(--text3);margin:.25rem 0;font-style:italic;" id="chain-status">Нажмите «Показать слова» чтобы начать</div>
+      <div class="arena" id="chain-arena"><div class="arena-placeholder">Слова появятся здесь</div></div>
+      <div id="chain-inputs"></div>
+      <div class="btn-row">
+        <button class="btn primary" onclick="chainShow()">Показать слова</button>
+        <button class="btn" onclick="chainRecall()">Воспроизвести</button>
+        <button class="btn" onclick="chainCheck()">Проверить</button>
+        <div class="tdisp" id="ctime">—</div>
+      </div>
+      <div class="pbar"><div class="pfill" id="ctimep" style="width:100%;background:var(--purple);"></div></div>
+      <div class="sc-row">
+        <div class="sc">Верно: <b id="chain-ok">0</b></div>
+        <div class="sc">Ошибок: <b id="chain-err">0</b></div>
+        <div class="sc">Попытка: <b id="chain-set">0</b></div>
+      </div>
+      <div class="tip">Метод дворца: разместите каждое слово в точке знакомого маршрута. При воспроизведении мысленно пройдите маршрут — слова «появятся» сами.</div>
+      <div class="warn">10 слов, строгий порядок, без подглядывания — уровень выше среднего.</div>
+    </div>
+  </div>
+
+  <!-- ИНТЕРФЕРЕНЦИЯ -->
+  <div class="phase" id="ph-2">
+    <div class="phase-hint">Блок 3 · Упражнение 2 · 12 минут</div>
+    <div class="ex">
+      <div class="ex-head">
+        <div class="ex-num" style="background:var(--purple-l);color:var(--purple);">2</div>
+        <div class="ex-info">
+          <div class="ex-title">Двойная интерференция</div>
+          <div class="ex-meta">запомни → счёт от 300 → вспомни</div>
+        </div>
+        <span class="tag" style="background:var(--purple-l);color:var(--purple);">торможение + ретривал</span>
+      </div>
+      <div class="ex-desc">Запомните 6 слов, затем выполните отвлекающую задачу (обратный счёт от 300 по 7), а затем воспроизведите слова. Именно так устроена реальная забывчивость. Задача — пробиться сквозь интерференцию.</div>
+      <div class="arena" id="int-arena"><div class="arena-placeholder">Нажмите «Старт»</div></div>
+      <div id="int-inputs"></div>
+      <div class="btn-row">
+        <button class="btn primary" onclick="intStart()">Старт</button>
+        <button class="btn" onclick="intCountDown()">−7</button>
+        <button class="btn" onclick="intRecall()">Воспроизвести</button>
+        <button class="btn" onclick="intCheck()">Проверить</button>
+        <div class="tdisp" id="itime">—</div>
+      </div>
+      <div class="sc-row">
+        <div class="sc">Фаза: <b id="int-phase-lbl">—</b></div>
+        <div class="sc">Счётчик: <b id="int-count-val">—</b></div>
+        <div class="sc">Верно: <b id="int-ok">0</b></div>
+      </div>
+      <div class="tip">После интерференции закройте глаза на 3 секунды и представьте момент, когда читали слова — это запустит контекстный ретривал.</div>
+    </div>
+  </div>
+
+  <!-- МАТРИЦА -->
+  <div class="phase" id="ph-3">
+    <div class="phase-hint">Блок 4 · Упражнение 3 · 10 минут</div>
+    <div class="ex">
+      <div class="ex-head">
+        <div class="ex-num" style="background:var(--purple-l);color:var(--purple);">3</div>
+        <div class="ex-info">
+          <div class="ex-title">Матрица 5×5 — нарастающая сложность</div>
+          <div class="ex-meta">начало 6 клеток · +2 при каждом успехе</div>
+        </div>
+        <span class="tag" style="background:var(--purple-l);color:var(--purple);">зрительная + пространственная</span>
+      </div>
+      <div class="ex-desc">Запомните паттерн закрашенных клеток в сетке 5×5. После скрытия — воспроизведите точно. При каждом успехе добавляются 2 клетки. Потолка нет.</div>
+      <div class="arena" id="mat-arena"><div class="arena-placeholder">Нажмите «Показать паттерн»</div></div>
+      <div class="btn-row">
+        <button class="btn primary" onclick="matShow()">Показать паттерн</button>
+        <button class="btn" onclick="matHide()">Скрыть / Вводить</button>
+        <button class="btn" onclick="matCheck()">Проверить</button>
+        <div class="tdisp" id="mtime">—</div>
+      </div>
+      <div class="pbar"><div class="pfill" id="mtimep" style="width:100%;background:var(--purple);"></div></div>
+      <div class="sc-row">
+        <div class="sc">Клеток: <b id="mat-n">6</b></div>
+        <div class="sc">Верно подряд: <b id="mat-ok">0</b></div>
+        <div class="sc">Раунд: <b id="mat-rnd">1</b></div>
+      </div>
+      <div class="tip">Сгруппируйте клетки в буквы, фигуры или маршруты — чанкинг резко увеличивает объём зрительной памяти.</div>
+      <div class="warn">Уровень растёт автоматически — потолка нет. Попробуйте дойти до 16+ клеток.</div>
+    </div>
+  </div>
+
+  <!-- ЗАМИНКА -->
+  <div class="phase" id="ph-4">
+    <div class="phase-hint">Блок 5 · Заминка · 9 минут</div>
+    <div class="ex">
+      <div class="ex-head">
+        <div class="ex-num" style="background:var(--teal-l);color:var(--teal);">Z</div>
+        <div class="ex-info">
+          <div class="ex-title">Каскад ретривала + метакогниция</div>
+          <div class="ex-meta">3 уровня · оценка уверенности</div>
+        </div>
+        <span class="tag" style="background:var(--teal-l);color:var(--teal);">консолидация</span>
+      </div>
+      <div class="ex-desc">Три уровня самоопрашивания без подглядывания: занятие → вчера → прошлая неделя. После каждого ответа оцените уверенность от 1 до 5. Это тренирует метапамять.</div>
+      <div class="arena" id="cas-arena"><div class="arena-placeholder">Нажмите «Начать каскад»</div></div>
+      <div class="btn-row"><button class="btn primary" onclick="casStart()">Начать каскад</button></div>
+      <div class="tip">Люди с развитой метапамятью восстанавливают забытое в 2.3 раза быстрее — потому что точно знают, где искать след.</div>
+    </div>
+
+    <div class="ex" style="background:var(--purple-l);border-color:var(--purple-m);">
+      <div class="ex-head">
+        <div class="ex-num" style="background:var(--purple);color:#fff;">+</div>
+        <div class="ex-info">
+          <div class="ex-title">Техника «5 минут до сна»</div>
+          <div class="ex-meta">домашнее задание</div>
+        </div>
+      </div>
+      <div class="ex-desc" style="color:var(--purple);">Перед сном — без телефона — воспроизведите в уме всё занятие. Сон после активного ретривала усиливает консолидацию в долгосрочную память в 1.5–2 раза.</div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+function gp(i) {
+  document.querySelectorAll('.phase').forEach(function(p, idx) {
+    p.classList.toggle('on', idx === i);
+  });
+  document.querySelectorAll('.nav-tab').forEach(function(b, idx) {
+    b.classList.toggle('on', idx === i);
+  });
+  window.scrollTo(0, 0);
+}
+
+var _timers = {};
+function startTimer(id, total, color, onDone) {
+  clearInterval(_timers[id]);
+  var rem = total;
+  function upd() {
+    var el = document.getElementById(id);
+    var bar = document.getElementById(id + 'p');
+    if (el) { var m = Math.floor(rem / 60); var s = rem % 60; el.textContent = m + ':' + (s < 10 ? '0' : '') + s; }
+    if (bar) { bar.style.width = Math.round((rem / total) * 100) + '%'; if (color) bar.style.background = color; }
+  }
+  upd();
+  _timers[id] = setInterval(function() {
+    rem--;
+    upd();
+    if (rem <= 0) { clearInterval(_timers[id]); if (onDone) onDone(); }
+  }, 1000);
+}
+function stopTimer(id) { clearInterval(_timers[id]); }
+
+var gates = [
+  { label: 'Сегодня утром', prompt: 'Одна сенсорная деталь — звук, запах, ощущение' },
+  { label: 'Вчера вечером', prompt: 'Что было последним действием перед сном?' },
+  { label: 'Прошлая неделя', prompt: 'Вспомните один разговор — кто, о чём, где' },
+  { label: 'Месяц назад', prompt: 'Что вас удивило или взволновало?' },
+  { label: 'Год назад', prompt: 'Какое место посещали? Что там было?' },
+];
+var gateIdx = 0;
+function openGates() {
+  gateIdx = 0;
+  showGate();
+  startTimer('gtime', 420, 'var(--teal)', null);
+}
+function showGate() {
+  var g = gates[gateIdx];
+  document.getElementById('gate-arena').innerHTML =
+    '<div class="gate-card">' +
+    '<div class="gate-level">Слой ' + (gateIdx + 1) + ' / ' + gates.length + '</div>' +
+    '<div class="gate-title">' + g.label + '</div>' +
+    '<div class="gate-prompt">' + g.prompt + '</div>' +
+    '</div>';
+}
+function nextGate() {
+  if (gateIdx < gates.length - 1) { gateIdx++; showGate(); }
+  else { document.getElementById('gate-arena').innerHTML = '<div class="success-msg">Все ворота пройдены!</div>'; }
+}
+
+var wordPools = [
+  ['Алгоритм','Гобелен','Солнечный','Верёвка','Консул','Пыль','Зеркало','Океан','Нить','Фонарь'],
+  ['Кратер','Парус','Янтарь','Ствол','Призрак','Бронза','Луна','Ключ','Горизонт','Ветер'],
+  ['Архив','Кремень','Волна','Колесо','Тень','Маяк','Рассвет','Иголка','Замок','Облако'],
+];
+var chainWords = [], chainSetN = 0, chainMode = 'idle';
+
+function chainShow() {
+  stopTimer('ctime');
+  chainSetN++;
+  chainMode = 'show';
+  document.getElementById('chain-inputs').innerHTML = '';
+  var pool = wordPools[(chainSetN - 1) % wordPools.length];
+  chainWords = pool.slice();
+  document.getElementById('chain-set').textContent = chainSetN;
+  document.getElementById('chain-status').textContent = 'Запоминайте — 45 секунд. Используйте дворец памяти.';
+  var html = '<div style="display:flex;flex-wrap:wrap;">';
+  chainWords.forEach(function(w, i) {
+    html += '<div class="wchip"><span class="num">' + (i + 1) + '.</span>' + w + '</div>';
+  });
+  html += '</div>';
+  document.getElementById('chain-arena').innerHTML = html;
+  startTimer('ctime', 45, 'var(--purple)', function() {
+    document.getElementById('chain-arena').innerHTML = '<div class="arena-placeholder">Время вышло. Слова скрыты. Нажмите «Воспроизвести».</div>';
+    chainMode = 'hidden';
+    document.getElementById('chain-status').textContent = 'Нажмите «Воспроизвести» для ввода ответов';
+  });
+}
+
+function chainRecall() {
+  if (chainMode === 'idle') return;
+  stopTimer('ctime');
+  chainMode = 'recall';
+  document.getElementById('chain-status').textContent = 'Введите слова по порядку (1–10):';
+  document.getElementById('chain-arena').innerHTML = '';
+  var html = '<div style="display:flex;flex-direction:column;gap:6px;margin-top:8px;">';
+  chainWords.forEach(function(_, i) {
+    html += '<div style="display:flex;align-items:center;gap:8px;">' +
+      '<span style="font-size:12px;color:var(--text3);width:22px;flex-shrink:0;">' + (i + 1) + '.</span>' +
+      '<input type="text" class="ans-inp" id="ci' + i + '" placeholder="Слово ' + (i + 1) + '"></div>';
+  });
+  html += '</div>';
+  document.getElementById('chain-inputs').innerHTML = html;
+}
+
+function chainCheck() {
+  if (chainMode !== 'recall') return;
+  var ok = 0, err = 0;
+  chainWords.forEach(function(w, i) {
+    var inp = document.getElementById('ci' + i);
+    if (!inp) return;
+    var val = (inp.value || '').trim().toLowerCase();
+    if (val === w.toLowerCase()) { inp.style.background = 'var(--green-l)'; inp.style.color = 'var(--green)'; ok++; }
+    else { inp.style.background = 'var(--red-l)'; inp.style.color = 'var(--red)'; inp.placeholder = w; }
+    inp.disabled = true;
+  });
+  err = chainWords.length - ok;
+  document.getElementById('chain-ok').textContent = parseInt(document.getElementById('chain-ok').textContent) + ok;
+  document.getElementById('chain-err').textContent = parseInt(document.getElementById('chain-err').textContent) + err;
+  chainMode = 'done';
+}
+
+var intWords = ['Факел','Ступень','Облако','Ключ','Маяк','Якорь'];
+var intMode = 'idle', intCountVal = 300, intTotalOk = 0;
+
+function intStart() {
+  intMode = 'show'; intCountVal = 300;
+  document.getElementById('int-inputs').innerHTML = '';
+  document.getElementById('int-phase-lbl').textContent = 'Запоминайте';
+  document.getElementById('int-count-val').textContent = '—';
+  var html = '<div style="display:flex;flex-wrap:wrap;">';
+  intWords.forEach(function(w) { html += '<div class="wchip">' + w + '</div>'; });
+  html += '</div><div style="font-size:12px;color:var(--text3);margin-top:8px;font-style:italic;">Запомните за 20 сек → нажимайте «−7» для интерференции</div>';
+  document.getElementById('int-arena').innerHTML = html;
+  startTimer('itime', 20, 'var(--purple)', function() {
+    document.getElementById('int-arena').innerHTML =
+      '<div style="font-size:16px;font-weight:500;color:var(--text);">Интерференция!</div>' +
+      '<div style="font-size:14px;color:var(--text2);margin-top:4px;">Нажимайте «−7» от 300</div>';
+    document.getElementById('int-count-val').textContent = '300';
+    document.getElementById('int-phase-lbl').textContent = 'Интерференция';
+    intMode = 'interfere';
+  });
+}
+
+function intCountDown() {
+  if (intMode !== 'interfere') return;
+  intCountVal -= 7;
+  document.getElementById('int-count-val').textContent = intCountVal;
+}
+
+function intRecall() {
+  if (intMode !== 'interfere' && intMode !== 'show') return;
+  stopTimer('itime');
+  intMode = 'recall';
+  document.getElementById('int-phase-lbl').textContent = 'Воспроизведение';
+  document.getElementById('int-arena').innerHTML =
+    '<div style="font-size:14px;color:var(--text2);font-style:italic;">Закройте глаза на 3 сек → вспомните момент чтения → вводите</div>';
+  var html = '<div style="display:flex;flex-direction:column;gap:6px;margin-top:8px;">';
+  intWords.forEach(function(_, i) {
+    html += '<div style="display:flex;align-items:center;gap:8px;">' +
+      '<span style="font-size:12px;color:var(--text3);width:22px;flex-shrink:0;">' + (i + 1) + '.</span>' +
+      '<input type="text" class="ans-inp" id="ii' + i + '" placeholder="Слово ' + (i + 1) + '"></div>';
+  });
+  html += '</div>';
+  document.getElementById('int-inputs').innerHTML = html;
+}
+
+function intCheck() {
+  if (intMode !== 'recall') return;
+  var ok = 0;
+  intWords.forEach(function(w, i) {
+    var inp = document.getElementById('ii' + i);
+    if (!inp) return;
+    var val = (inp.value || '').trim().toLowerCase();
+    if (val === w.toLowerCase()) { inp.style.background = 'var(--green-l)'; inp.style.color = 'var(--green)'; ok++; }
+    else { inp.style.background = 'var(--red-l)'; inp.style.color = 'var(--red)'; inp.placeholder = w; }
+    inp.disabled = true;
+  });
+  intTotalOk += ok;
+  document.getElementById('int-ok').textContent = intTotalOk;
+  intMode = 'done';
+}
+
+var matCells = new Set(), matUser = new Set(), matN = 6, matRnd = 1, matMode = 'idle';
+
+function matShow() {
+  matMode = 'show';
+  matUser = new Set();
+  matCells = new Set();
+  while (matCells.size < matN) { matCells.add(Math.floor(Math.random() * 25)); }
+  document.getElementById('mat-n').textContent = matN;
+  document.getElementById('mat-rnd').textContent = matRnd;
+  renderMat(false);
+  var secs = Math.min(5 + matN, 28);
+  startTimer('mtime', secs, 'var(--purple)', function() {
+    matMode = 'recall';
+    renderMat(true);
+  });
+}
+
+function matHide() {
+  if (matMode !== 'show' && matMode !== 'idle') return;
+  if (matMode === 'show') { stopTimer('mtime'); }
+  matMode = 'recall';
+  renderMat(true);
+}
+
+function renderMat(recallMode) {
+  var arena = document.getElementById('mat-arena');
+  arena.innerHTML = '';
+  var grid = document.createElement('div');
+  grid.className = 'mat-grid';
+  for (var i = 0; i < 25; i++) {
+    (function(idx) {
+      var c = document.createElement('div');
+      c.className = 'mcell';
+      if (!recallMode && matCells.has(idx)) { c.classList.add('lit'); }
+      if (recallMode) {
+        c.onclick = function() {
+          if (matUser.has(idx)) { matUser.delete(idx); c.classList.remove('sel'); }
+          else { matUser.add(idx); c.classList.add('sel'); }
+        };
+      }
+      grid.appendChild(c);
+    })(i);
+  }
+  arena.appendChild(grid);
+  var hint = document.createElement('div');
+  hint.style.cssText = 'font-size:12px;color:var(--text3);margin-top:10px;font-style:italic;';
+  hint.textContent = recallMode ? 'Нажмите на клетки, которые были закрашены' : 'Запоминайте — таймер идёт';
+  arena.appendChild(hint);
+}
+
+function matCheck() {
+  if (matMode !== 'recall') return;
+  var cells = document.getElementById('mat-arena').querySelectorAll('.mcell');
+  var allOk = true;
+  cells.forEach(function(c, i) {
+    var should = matCells.has(i);
+    var user = matUser.has(i);
+    c.onclick = null;
+    if (should && user) { c.className = 'mcell ok'; }
+    else if (should && !user) { c.className = 'mcell miss'; allOk = false; }
+    else if (!should && user) { c.className = 'mcell bad'; allOk = false; }
+  });
+  var prev = parseInt(document.getElementById('mat-ok').textContent) || 0;
+  if (allOk) { document.getElementById('mat-ok').textContent = prev + 1; matN += 2; }
+  else { document.getElementById('mat-ok').textContent = 0; }
+  matRnd++;
+  matMode = 'idle';
+}
+
+var casQuestions = [
+  { q: 'Назовите все упражнения этого занятия и их главную цель.', hint: 'Занятие' },
+  { q: 'Что происходило вчера после 18:00? Восстановите по шагам.', hint: 'Вчера вечером' },
+  { q: 'С кем вы общались на прошлой неделе? Вспомните один разговор как можно подробнее.', hint: 'Прошлая неделя' },
+];
+var casIdx = 0;
+
+function casStart() { casIdx = 0; casRender(); }
+
+function casRender() {
+  if (casIdx >= casQuestions.length) {
+    document.getElementById('cas-arena').innerHTML = '<div class="success-msg">Каскад завершён. Метапамять прокачана.</div>';
+    return;
+  }
+  var q = casQuestions[casIdx];
+  var html =
+    '<div style="font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:var(--text3);margin-bottom:6px;">' + q.hint + ' · Вопрос ' + (casIdx + 1) + '/' + casQuestions.length + '</div>' +
+    '<div style="font-family:\'DM Serif Display\',serif;font-size:18px;color:var(--text);margin-bottom:10px;">' + q.q + '</div>' +
+    '<textarea class="ans-inp" rows="3" placeholder="Пишите свободно, без оценки..."></textarea>' +
+    '<div style="font-size:13px;color:var(--text2);margin-top:4px;">Оцените уверенность (1 — смутно, 5 — точно):</div>' +
+    '<div class="conf-btns">';
+  [1, 2, 3, 4, 5].forEach(function(n) {
+    html += '<button class="conf-btn" onclick="casNext()">' + n + '</button>';
+  });
+  html += '</div>';
+  document.getElementById('cas-arena').innerHTML = html;
+}
+
+function casNext() { casIdx++; casRender(); }
+</script>
+</body>
+</html>
