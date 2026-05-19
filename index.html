@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Тренажёр внимания</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<!-- ─── App shell ─── -->
+<div class="app">
+
+  <div class="header">
+    <div class="header-left">
+      <h1>Тренажёр внимания</h1>
+      <p>21 категория · 4 уровня сложности</p>
+    </div>
+    <button class="rand-btn" onclick="startRandom()">
+      <svg viewBox="0 0 24 24"><polygon points="5,3 19,12 5,21"/></svg>
+      Случайный набор
+    </button>
+  </div>
+
+  <!-- Level picker -->
+  <div class="level-bar">
+    <span class="level-bar-label">Уровень:</span>
+    <div id="level-picker"></div>
+  </div>
+
+  <!-- Category grid (populated by engine.js) -->
+  <div id="grid-root"></div>
+
+</div><!-- /app -->
+
+<!-- ─── Modal ─── -->
+<div class="modal-overlay" id="overlay" onclick="overlayClick(event)">
+  <div class="modal" id="modal">
+
+    <div class="modal-head">
+      <div class="modal-title" id="m-title"></div>
+      <div style="display:flex;align-items:center;gap:10px;">
+        <div class="modal-badge" id="m-badge"></div>
+        <button class="modal-close" onclick="closeModal()" aria-label="Закрыть">✕</button>
+      </div>
+    </div>
+
+    <div class="modal-body">
+      <div class="sess-lbl" id="sess-lbl"></div>
+      <div class="tbar-wrap">
+        <div class="tbar" id="tbar" style="width:100%;background:var(--teal-bd)"></div>
+      </div>
+      <div id="task-area"></div>
+      <div id="fb" class="feedback" style="display:none"></div>
+    </div>
+
+    <div class="modal-foot">
+      <div class="score-label">Верно: <b id="sc-ok">0</b> / <b id="sc-tot">0</b></div>
+      <button class="next-btn" id="nxt-btn" onclick="nextTask()" style="display:none">Далее →</button>
+    </div>
+
+  </div>
+</div>
+
+<!-- ─── Scripts: order matters ─── -->
+<!-- 1. Core utils + state -->
+<script src="js/core.js"></script>
+<!-- 2. Registry (defines SECTIONS and CATS={}) -->
+<script src="js/registry.js"></script>
+<!-- 3. Category modules (each populates CATS) -->
+<script src="js/categories/stroop.js"></script>
+<script src="js/categories/focus.js"></script>
+<script src="js/categories/grid_search.js"></script>
+<script src="js/categories/diff.js"></script>
+<script src="js/categories/oral_math.js"></script>
+<script src="js/categories/grid_memory.js"></script>
+<script src="js/categories/schulte.js"></script>
+<script src="js/categories/memory.js"></script>
+<script src="js/categories/sequence_pattern.js"></script>
+<script src="js/categories/bihem_hand.js"></script>
+    <script src="js/categories/bihem.js"></script>
+    <script src="js/categories/ghost_game.js"></script>
+<script src="js/categories/speech.js"></script>
+<script src="js/categories/logic.js"></script>
+<!-- 4. Engine (session, UI shell, boot) -->
+<script src="js/engine.js"></script>
+
+</body>
+</html>
