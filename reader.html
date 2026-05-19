@@ -30,28 +30,39 @@
 body{font-family:'Libre Baskerville',Georgia,serif;background:var(--bg);color:var(--text);min-height:100vh}
 
 /* ── TOOLTIP ─────────────────────────────────────────── */
+/*
+  Key design decisions:
+  - Fixed position, body-level, outside any scroll/overflow/stacking context
+  - Uses opacity 0/1 (not display/visibility) so offsetWidth is always measurable
+  - pointer-events:none so it never blocks mouse events on words
+*/
 #tt{
-  position:fixed;z-index:99999;pointer-events:none;
-  /* start hidden off-screen */
-  left:-9999px;top:-9999px;
+  position:fixed;
+  z-index:99999;
+  pointer-events:none;
+  opacity:0;
+  transition:opacity .12s ease;
+  /* off-screen until first placement */
+  left:-999px; top:-999px;
 }
+#tt.show{ opacity:1; }
 #tt-box{
   background:#1c1814;color:#f0ebe2;
   border-radius:10px;padding:10px 14px;
   min-width:140px;max-width:260px;
   box-shadow:0 8px 32px rgba(0,0,0,.5);
   font-family:'DM Mono',monospace;font-size:12px;line-height:1.55;
+  white-space:normal;
 }
 @media(prefers-color-scheme:dark){
   #tt-box{background:#eee8df;color:#1a1610}
-  #tt-lbl{color:#8a8070!important}
-  #tt-note{color:#8a8070!important}
+  #tt-lbl,#tt-note{color:#8a8070!important}
 }
 #tt-lbl{font-size:11px;font-weight:500;color:#7a7060;letter-spacing:.05em;text-transform:uppercase;margin-bottom:4px}
 #tt-trans{font-family:'Libre Baskerville',serif;font-size:15px;margin-bottom:2px}
 #tt-note{font-size:11px;color:#7a7060;margin-top:2px}
 
-/* ── HEADER ────────────────────────────────────────────*/
+/* ── HEADER ─────────────────────────────────────────── */
 header{
   background:var(--bg2);border-bottom:1px solid var(--border);
   padding:0 2rem;display:flex;align-items:center;gap:1.25rem;
@@ -134,7 +145,6 @@ button.primary:hover{background:var(--accent2);border-color:var(--accent2);color
 .hint-bar{margin-bottom:1.75rem;padding:9px 14px;background:var(--accent-bg);border-left:3px solid var(--accent);border-radius:0 6px 6px 0;font-family:'DM Mono',monospace;font-size:11px;color:var(--text2);letter-spacing:.03em;line-height:1.6}
 
 .para{margin-bottom:2rem;font-size:18px;line-height:1.9;font-weight:400}
-
 .sent{display:inline;border-radius:3px;transition:background .15s}
 .sent.on{background:var(--hl-bg);outline:1px solid var(--hl-border);border-radius:3px}
 
@@ -147,8 +157,11 @@ button.primary:hover{background:var(--accent2);border-color:var(--accent2);color
 }
 .sbtn:hover,.sbtn.on{background:var(--accent);border-color:var(--accent);color:#fff}
 
-.w{display:inline;border-radius:2px;padding:0 1px;transition:background .1s}
-.w:hover{background:var(--word-bg);cursor:pointer}
+.w{
+  display:inline;border-radius:2px;padding:0 1px;
+  transition:background .1s;cursor:pointer;
+}
+.w:hover{background:var(--word-bg)}
 
 @media(max-width:600px){
   header{padding:0 1rem;gap:.6rem} .hlabel{display:none}
@@ -159,7 +172,7 @@ button.primary:hover{background:var(--accent2);border-color:var(--accent2);color
 </head>
 <body>
 
-<!-- Tooltip lives at body root — no stacking context, no overflow clipping -->
+<!-- Tooltip: direct child of body, no overflow/stacking context around it -->
 <div id="tt"><div id="tt-box">
   <div id="tt-lbl"></div>
   <div id="tt-trans"></div>
@@ -188,9 +201,9 @@ button.primary:hover{background:var(--accent2);border-color:var(--accent2);color
   <textarea id="ta" placeholder="Paste or type English text here…"></textarea>
   <div class="btn-row">
     <button class="primary" id="load-btn">Load text</button>
-    <button id="file-btn">Open .txt</button>
+    <button id="file-btn">Open .txt file</button>
     <button class="ghost" id="smpl-btn">Load sample</button>
-    <input type="file" id="fi" accept=".txt" style="display:none">
+    <input type="file" id="fi" accept=".txt,text/plain" style="display:none">
   </div>
 </div>
 
@@ -218,7 +231,7 @@ button.primary:hover{background:var(--accent2);border-color:var(--accent2);color
       <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><rect x="5" y="5" width="14" height="14" rx="2"/></svg>
     </button>
   </div>
-  <div class="hint-bar">💡 Hover any word for Russian translation &nbsp;·&nbsp; Space = pause &nbsp;·&nbsp; ← → = prev/next sentence &nbsp;·&nbsp; Esc = stop</div>
+  <div class="hint-bar">💡 Hover any word for Russian translation &nbsp;·&nbsp; Space = pause &nbsp;·&nbsp; ← → = prev/next &nbsp;·&nbsp; Esc = stop</div>
   <div id="content"></div>
 </div>
 </main>
@@ -239,82 +252,60 @@ She thought about him, as she always did here. Not the last months, not the hosp
 
 // ═══════════════════════════════════════════════════════
 // SENTENCE SPLITTER
-// Hard rule: sentence boundaries ONLY at  .  !  ?
+// Hard rule: boundaries ONLY at . ! ?
 // Commas, semicolons, colons, dashes = intonation only.
+// Terminating punct is KEPT so TTS gets correct pause/intonation.
 // Protected: abbreviations, decimals, ellipsis.
-// The terminating punctuation is KEPT in the sentence text
-// so TTS gets the correct intonation/pause.
 // ═══════════════════════════════════════════════════════
 function splitSentences(para) {
-  // ── 1. protect false positives ──────────────────────
   let s = para
-    // Common title/Latin abbreviations: Mr. Mrs. Dr. Prof. St. Jr. Sr. vs. etc. e.g. i.e. No. Vol.
     .replace(/\b(Mr|Mrs|Ms|Dr|Prof|Rev|St|Jr|Sr|vs|etc|e\.g|i\.e|No|Vol|Fig|Dept|Corp|Inc|Ltd)\./gi,
              (_, g) => g + '\x01')
-    // Single uppercase initial before a name: "J. Smith"
     .replace(/\b([A-Z])\.\s+(?=[A-Z])/g, '$1\x01 ')
-    // Decimal numbers: 3.14
     .replace(/(\d)\.(\d)/g, '$1\x02$2')
-    // Ellipsis (2+ dots) — not a sentence terminator
     .replace(/\.{2,}/g, m => '\x03'.repeat(m.length));
 
-  // ── 2. walk and split ────────────────────────────────
   const TERM  = new Set(['.', '!', '?']);
   const CLOSE = new Set(['"', '\u201d', "'", '\u2019', ')', ']', '\u00bb']);
-
   const parts = [];
-  let start = 0;
-  let i = 0;
+  let start = 0, i = 0;
 
   while (i < s.length) {
     if (TERM.has(s[i])) {
-      // absorb full terminator cluster: "?!" or repeated "..."
       let end = i;
       while (end < s.length && TERM.has(s[end])) end++;
-      // absorb closing punctuation immediately after: ." or ?)
       while (end < s.length && CLOSE.has(s[end])) end++;
-      // skip spaces
       let j = end;
       while (j < s.length && s[j] === ' ') j++;
-
       const atEnd     = j >= s.length;
       const nextUpper = !atEnd && /[A-Z\u0400-\u042F\u201c"]/.test(s[j]);
-
       if (atEnd || nextUpper) {
-        // include the terminator(s) in the chunk — TTS needs them
         const chunk = restore(s.slice(start, end).trim());
         if (chunk.length > 1) parts.push(chunk);
-        start = j;
-        i     = j;
-        continue;
+        start = j; i = j; continue;
       }
     }
     i++;
   }
-  // trailing fragment (no terminal punctuation)
   if (start < s.length) {
     const chunk = restore(s.slice(start).trim());
     if (chunk.length > 1) parts.push(chunk);
   }
-
   return parts.length ? parts : [para.trim()];
 }
 
 function restore(s) {
-  return s
-    .replace(/\x01/g, '.')
-    .replace(/\x02/g, '.')
-    .replace(/\x03+/g, m => '.'.repeat(m.length));
+  return s.replace(/\x01/g,'.').replace(/\x02/g,'.').replace(/\x03+/g, m=>'.'.repeat(m.length));
 }
 
 // ═══════════════════════════════════════════════════════
 // VOICES
 // ═══════════════════════════════════════════════════════
-const synth   = window.speechSynthesis;
-let   voices  = [];
-const vsel    = document.getElementById('vsel');
-const rateEl  = document.getElementById('rate');
-const rdspEl  = document.getElementById('rdsp');
+const synth  = window.speechSynthesis;
+let voices   = [];
+const vsel   = document.getElementById('vsel');
+const rateEl = document.getElementById('rate');
+const rdspEl = document.getElementById('rdsp');
 
 function loadVoices() {
   voices = synth.getVoices();
@@ -327,14 +318,12 @@ function loadVoices() {
     o.textContent = v.name + (v.localService ? '' : ' ☁');
     vsel.appendChild(o);
   });
-  // prefer en-US or en-GB
   const pref = list.findIndex(v => v.lang === 'en-US' || v.lang === 'en-GB');
   if (pref >= 0) vsel.selectedIndex = pref;
 }
 loadVoices();
 if (speechSynthesis.onvoiceschanged !== undefined)
   speechSynthesis.onvoiceschanged = loadVoices;
-
 rateEl.addEventListener('input', () => {
   rdspEl.textContent = parseFloat(rateEl.value).toFixed(1).replace('.0','') + '×';
 });
@@ -342,10 +331,10 @@ rateEl.addEventListener('input', () => {
 // ═══════════════════════════════════════════════════════
 // INPUT / FILE
 // ═══════════════════════════════════════════════════════
-const dz   = document.getElementById('dz');
-const ta   = document.getElementById('ta');
-const inpEl= document.getElementById('inp');
-const rdEl = document.getElementById('reader');
+const dz    = document.getElementById('dz');
+const ta    = document.getElementById('ta');
+const inpEl = document.getElementById('inp');
+const rdEl  = document.getElementById('reader');
 
 function openTA() {
   dz.classList.add('hidden');
@@ -355,27 +344,37 @@ function openTA() {
 
 dz.addEventListener('click',   openTA);
 dz.addEventListener('keydown', e => { if (e.key==='Enter'||e.key===' ') openTA(); });
-
 document.getElementById('smpl-btn').addEventListener('click', () => { openTA(); ta.value = SAMPLE; });
 
+// ── TXT file loading (single clean handler) ──────────
 document.getElementById('file-btn').addEventListener('click', () =>
   document.getElementById('fi').click());
 
-document.getElementById('fi').addEventListener('change', e => {
-  const f = e.target.files[0]; if (!f) return;
-  const r = new FileReader();
-  r.onload = ev => { openTA(); ta.value = ev.target.result; };
-  r.readAsText(f, 'utf-8');
+document.getElementById('fi').addEventListener('change', function() {
+  const f = this.files[0];
+  if (!f) return;
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    ta.value = e.target.result;
+    openTA();
+  };
+  reader.onerror = function() { alert('Could not read the file.'); };
+  reader.readAsText(f, 'utf-8');
+  this.value = ''; // reset so same file can be re-selected
 });
 
-document.body.addEventListener('dragover', e => e.preventDefault());
+// ── Drag & drop ──────────────────────────────────────
+document.body.addEventListener('dragover', e => { e.preventDefault(); e.dataTransfer.dropEffect = 'copy'; });
 document.body.addEventListener('drop', e => {
   e.preventDefault();
   const f = e.dataTransfer.files[0];
-  if (!f || !f.name.endsWith('.txt')) return;
-  const r = new FileReader();
-  r.onload = ev => { openTA(); ta.value = ev.target.result; };
-  r.readAsText(f, 'utf-8');
+  if (!f) return;
+  if (!f.name.toLowerCase().endsWith('.txt') && f.type !== 'text/plain') {
+    alert('Please drop a .txt file.'); return;
+  }
+  const reader = new FileReader();
+  reader.onload = ev => { ta.value = ev.target.result; openTA(); };
+  reader.readAsText(f, 'utf-8');
 });
 
 document.getElementById('load-btn').addEventListener('click', () => {
@@ -404,7 +403,7 @@ function buildReader(raw) {
   sentences = [];
   document.getElementById('content').innerHTML = '';
 
-  const paras = raw.split(/\n+/).map(p => p.trim()).filter(p => p.length > 1);
+  const paras    = raw.split(/\n+/).map(p => p.trim()).filter(p => p.length > 1);
   const titleRaw = paras[0] || '';
   document.getElementById('btitle').textContent =
     titleRaw.length > 72 ? titleRaw.slice(0, 72) + '…' : titleRaw;
@@ -415,28 +414,25 @@ function buildReader(raw) {
     pDiv.className = 'para';
 
     splitSentences(para).forEach(sentText => {
+      const i = idx++;
+
       const btn = document.createElement('button');
-      btn.className = 'sbtn';
-      btn.title = 'Read this sentence';
-      btn.innerHTML = SPLAY;
+      btn.className   = 'sbtn';
+      btn.dataset.i   = i;
+      btn.title       = 'Read this sentence';
+      btn.innerHTML   = SPLAY;
       btn.addEventListener('click', () => {
-        const i = +btn.dataset.i;
-        (isPlaying && curIdx === i) ? pauseResume() : playSent(i);
+        (isPlaying && curIdx === +btn.dataset.i) ? pauseResume() : playSent(+btn.dataset.i);
       });
 
       const span = document.createElement('span');
       span.className = 'sent';
-      buildWords(span, sentText);
-
-      // store index in dataset after push
-      const i = idx++;
-      btn.dataset.i  = i;
       span.dataset.i = i;
+      buildWords(span, sentText);
 
       pDiv.appendChild(btn);
       pDiv.appendChild(span);
       pDiv.appendChild(document.createTextNode(' '));
-
       sentences.push({ text: sentText, btn, span });
     });
 
@@ -452,17 +448,15 @@ function buildReader(raw) {
   updateProg();
 }
 
-// tokenise sentence into interactive word spans + plain text nodes
 function buildWords(container, text) {
-  const tokens = text.match(/[A-Za-z''\u2019-]+|[^A-Za-z''\u2019-]+/g) || [text];
+  const tokens = text.match(/[A-Za-z'\u2019]+|[^A-Za-z'\u2019]+/g) || [text];
   tokens.forEach(tok => {
-    const isWord = /^[A-Za-z''\u2019-]+$/.test(tok)
-                && tok.replace(/[^a-zA-Z]/g, '').length >= 2;
-    if (isWord) {
-      const w   = document.createElement('span');
-      w.className  = 'w';
+    const letters = tok.replace(/[^a-zA-Z]/g, '');
+    if (/^[A-Za-z'\u2019]+$/.test(tok) && letters.length >= 2) {
+      const w = document.createElement('span');
+      w.className   = 'w';
       w.textContent = tok;
-      w.dataset.key = tok.replace(/[^a-zA-Z]/g, '').toLowerCase();
+      w.dataset.key = letters.toLowerCase();
       w.addEventListener('mouseenter', onWordEnter);
       w.addEventListener('mouseleave', onWordLeave);
       container.appendChild(w);
@@ -487,7 +481,7 @@ function playSent(i) {
   const vi = parseInt(vsel.value, 10);
   if (!isNaN(vi) && voices[vi]) utt.voice = voices[vi];
 
-  utt.onend = () => { clearHL(i); if (isPlaying) playSent(i + 1); };
+  utt.onend   = () => { clearHL(i); if (isPlaying) playSent(i + 1); };
   utt.onerror = ev => { if (ev.error !== 'interrupted') { isPlaying = false; updateBar(); } };
   synth.speak(utt);
 }
@@ -514,7 +508,7 @@ function hlAll() {
     s.span.classList.toggle('on', on);
     s.btn.classList.toggle('on', on);
     s.btn.innerHTML = on ? SPAUSE : SPLAY;
-    s.btn.title = on ? 'Pause' : 'Read this sentence';
+    s.btn.title     = on ? 'Pause' : 'Read this sentence';
   });
   if (curIdx >= 0 && curIdx < sentences.length) {
     const t = sentences[curIdx].text;
@@ -527,7 +521,7 @@ function clearHL(i) {
   sentences[i].span.classList.remove('on');
   sentences[i].btn.classList.remove('on');
   sentences[i].btn.innerHTML = SPLAY;
-  sentences[i].btn.title = 'Read this sentence';
+  sentences[i].btn.title     = 'Read this sentence';
 }
 function updateProg() {
   const pct = sentences.length ? Math.max(0, Math.round(((curIdx+1)/sentences.length)*100)) : 0;
@@ -543,50 +537,54 @@ function scrollTo(i) {
     sentences[i].span.scrollIntoView({ behavior:'smooth', block:'center' });
 }
 
-// controls
 document.getElementById('play-btn').addEventListener('click', () => {
   if (!sentences.length) return;
   synth.paused ? pauseResume() : isPlaying ? pauseResume() : playSent(curIdx >= 0 ? curIdx : 0);
 });
 document.getElementById('prev-btn').addEventListener('click', () => {
   if (!sentences.length) return;
-  playSent(Math.max(0, curIdx <= 0 ? 0 : curIdx-1));
+  playSent(Math.max(0, curIdx <= 0 ? 0 : curIdx - 1));
 });
 document.getElementById('next-btn').addEventListener('click', () => {
   if (!sentences.length) return;
-  playSent(Math.min(sentences.length-1, curIdx < 0 ? 0 : curIdx+1));
+  playSent(Math.min(sentences.length - 1, curIdx < 0 ? 0 : curIdx + 1));
 });
 document.getElementById('stop-btn').addEventListener('click', () => stopAll());
 document.addEventListener('keydown', e => {
   if (['TEXTAREA','INPUT','SELECT'].includes(e.target.tagName)) return;
-  if (e.code==='Space')      { e.preventDefault(); document.getElementById('play-btn').click(); }
-  if (e.code==='ArrowRight') document.getElementById('next-btn').click();
-  if (e.code==='ArrowLeft')  document.getElementById('prev-btn').click();
-  if (e.code==='Escape')     stopAll();
+  if (e.code === 'Space')      { e.preventDefault(); document.getElementById('play-btn').click(); }
+  if (e.code === 'ArrowRight') document.getElementById('next-btn').click();
+  if (e.code === 'ArrowLeft')  document.getElementById('prev-btn').click();
+  if (e.code === 'Escape')     stopAll();
 });
 
 // ═══════════════════════════════════════════════════════
 // TOOLTIP
+// Strategy:
+//  - #tt always rendered (opacity:0 when hidden), so offsetWidth is real
+//  - On enter: set content + position, then add .show class (opacity:1)
+//  - On leave: remove .show (opacity:0), position stays wherever it was
+//  - No requestAnimationFrame needed — measure right after content set
 // ═══════════════════════════════════════════════════════
 const ttEl    = document.getElementById('tt');
 const ttLbl   = document.getElementById('tt-lbl');
 const ttTrans = document.getElementById('tt-trans');
 const ttNote  = document.getElementById('tt-note');
 
-const xlat   = {};       // cache: key → {translation, note}
-let   ttKey  = '';       // word currently displayed/loading
-let   ttOn   = false;    // tooltip visible?
-let   ttTmr  = null;
+const xlat  = {};    // cache: word key → {translation, note}
+let ttKey   = '';
+let ttOn    = false;
+let ttTimer = null;
 
 function onWordEnter(e) {
   const key = e.currentTarget.dataset.key;
   if (!key) return;
-  clearTimeout(ttTmr);
-  ttTmr = setTimeout(() => showTT(e.currentTarget, key), 160);
+  clearTimeout(ttTimer);
+  ttTimer = setTimeout(() => showTT(e.currentTarget, key), 150);
 }
 
 function onWordLeave() {
-  clearTimeout(ttTmr);
+  clearTimeout(ttTimer);
   hideTT();
 }
 
@@ -594,77 +592,81 @@ function showTT(wordEl, key) {
   ttOn  = true;
   ttKey = key;
 
+  // Set placeholder content first
   ttLbl.textContent   = key;
-  ttTrans.textContent = '';
+  ttTrans.innerHTML   = '<i style="opacity:.55;font-size:12px;font-style:italic">перевод…</i>';
   ttNote.textContent  = '';
-  ttTrans.innerHTML   = '<i style="font-style:italic;opacity:.6;font-size:12px">перевод…</i>';
 
-  // position anchored below the word
+  // Position tooltip (content is already set, opacity:0 so invisible but measurable)
   placeTT(wordEl);
 
-  if (xlat[key]) { renderTT(xlat[key]); return; }
+  // Fade in
+  ttEl.classList.add('show');
 
+  // Fetch or serve from cache
+  if (xlat[key]) {
+    renderTT(xlat[key]);
+    return;
+  }
   apiTranslate(key)
-    .then(r => { xlat[key] = r; if (ttOn && ttKey === key) renderTT(r); })
+    .then(r => {
+      xlat[key] = r;
+      if (ttOn && ttKey === key) renderTT(r);
+    })
     .catch(err => {
-      console.error('translate:', err);
-      if (ttOn && ttKey === key) { ttTrans.textContent = '—'; ttNote.textContent = ''; }
+      console.error('translate error:', err);
+      if (ttOn && ttKey === key) {
+        ttTrans.textContent = '—';
+        ttNote.textContent  = '';
+      }
     });
 }
 
 function renderTT(r) {
   ttTrans.textContent = r.translation || '—';
-  ttNote.textContent  = r.note        || '';
+  ttNote.textContent  = r.note || '';
 }
 
 function hideTT() {
   ttOn  = false;
   ttKey = '';
-  // move off-screen (no flicker from display/visibility toggle)
-  ttEl.style.left = '-9999px';
-  ttEl.style.top  = '-9999px';
+  ttEl.classList.remove('show');
 }
 
 function placeTT(wordEl) {
-  // Put tooltip off-screen first, make it rendered so we can measure it
-  ttEl.style.left = '-9999px';
-  ttEl.style.top  = '-9999px';
+  // Measure tooltip (opacity:0 but display:block equivalent — always in DOM)
+  const tw = ttEl.offsetWidth  || 200;
+  const th = ttEl.offsetHeight || 70;
+  const vw = window.innerWidth;
+  const vh = window.innerHeight;
 
-  // Use rAF so browser has laid out the box before we measure
-  requestAnimationFrame(() => {
-    const r  = wordEl.getBoundingClientRect();
-    const tw = ttEl.offsetWidth  || 180;
-    const th = ttEl.offsetHeight || 64;
-    const vw = window.innerWidth;
-    const vh = window.innerHeight;
+  const r  = wordEl.getBoundingClientRect();
+  let x = r.left + r.width / 2 - tw / 2;
+  let y = r.bottom + 10;
 
-    let x = r.left + r.width / 2 - tw / 2;
-    let y = r.bottom + 8;
+  // Flip above if no room below
+  if (y + th + 8 > vh) y = r.top - th - 10;
+  // Clamp horizontal
+  x = Math.max(8, Math.min(x, vw - tw - 8));
 
-    // flip above if not enough room below
-    if (y + th + 8 > vh) y = r.top - th - 8;
-    // clamp horizontally
-    x = Math.max(8, Math.min(x, vw - tw - 8));
-
-    ttEl.style.left = x + 'px';
-    ttEl.style.top  = y + 'px';
-  });
+  ttEl.style.left = x + 'px';
+  ttEl.style.top  = y + 'px';
 }
 
 // ═══════════════════════════════════════════════════════
-// API — translate single word EN → RU via Claude
+// API — EN → RU word translation via Claude
 // ═══════════════════════════════════════════════════════
 async function apiTranslate(word) {
   const prompt =
-`You are an English-to-Russian dictionary. Reply ONLY with a raw JSON object — no markdown, no code fences, no extra text whatsoever.
+`You are an English-to-Russian dictionary. Reply ONLY with a raw JSON object — no markdown, no code fences, no extra text.
 
 Word: "${word}"
 
-Required fields:
-  "translation" — Russian translation, 1-5 words, most common meaning first
-  "note"        — OPTIONAL short clarification in Russian (part of speech + context if polysemous/idiomatic); empty string "" if not needed
+Fields:
+  "translation" — Russian, 1-5 words, most common meaning first
+  "note"        — short Russian clarification (part of speech + context) if word is polysemous or idiomatic; empty string "" otherwise
 
-Examples (do not copy literally):
+Examples:
   bark    → {"translation":"лаять; кора","note":"гл./сущ. — зависит от контекста"}
   run     → {"translation":"бежать, бег","note":"гл. также: управлять, запускать"}
   murmur  → {"translation":"бормотать; журчать","note":"также сущ.: тихий звук"}
@@ -679,9 +681,9 @@ Examples (do not copy literally):
       'anthropic-dangerous-direct-browser-access': 'true'
     },
     body: JSON.stringify({
-      model   : 'claude-sonnet-4-20250514',
+      model     : 'claude-sonnet-4-20250514',
       max_tokens: 120,
-      messages: [{ role: 'user', content: prompt }]
+      messages  : [{ role: 'user', content: prompt }]
     })
   });
 
